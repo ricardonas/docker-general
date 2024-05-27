@@ -1,0 +1,35 @@
+version: '3'
+services:
+  application:
+    container_name: application
+    build:
+      context: .
+       # Dockerize waits for the complete initialization of the database server.
+      # It does not solely rely on the initialization of the database container like 'depends_on'.
+      entrypoint: dockerize -wait tcp://db:3306 -timeout 20s docker.entrypoint.sh
+      networks:
+        - application-network
+      volumes:
+        - ./node:/usr/src/app
+      tty: true
+      ports:
+        - "3000:3000"
+      depends_on:
+        - db
+  db:
+    container_name: db
+    image: mysql:5.7
+    command: --innodb-use-native-aio=0
+    restart: always
+    tty: true
+    volumes:
+      - ./mysql:/var/lib/mysql
+    environment:
+      - MYSQL_DATABASE=db
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_USER=root
+    networks:
+      - application-network
+  networks:
+    application-network:
+      driver: bridge
